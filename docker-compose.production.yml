@@ -10,7 +10,7 @@ services:
       - ./.env
 
   backend:
-    image: tikzed/foodgram-backend:latest
+    image: tikzed/foodgram_backend:latest
     volumes:
       - static_value:/app/static/
       - media_value:/app/media/
@@ -21,7 +21,7 @@ services:
       - ./.env
 
   frontend:
-    image: tikzed/foodgram-frontend:latest
+    image: tikzed/foodgram_frontend:latest
     volumes:
       - ../frontend/:/app/result_build/
 
