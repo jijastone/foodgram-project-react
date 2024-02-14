@@ -28,7 +28,7 @@ services:
   nginx:
     image: nginx:1.21.3-alpine
     ports:
-      - "8000:3000"
+      - "8000:80"
     volumes:
       - ../frontend/build:/usr/share/nginx/html/
       - static_value:/var/html/static/
