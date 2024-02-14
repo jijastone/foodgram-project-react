@@ -31,8 +31,9 @@ services:
     image: tikzed/foodgram_gateway
     env_file: .env
     volumes:
-      - static_volume:/staticfiles/
-      - media_volume:/app/media
+      - static_value:/var/html/static/
+      - media_value:/var/html/media/
+      - redoc:/usr/share/nginx/html/api/docs/
     ports:
       - 8000:80
     depends_on:
