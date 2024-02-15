@@ -34,7 +34,7 @@ services:
       - static:/app/result_build/build/
 
   nginx:
-    image: tikzed/foodgram_nginx
+    image: tikzed/foodgram_gateway
     env_file: .env
     ports:
       - "8000:80"
