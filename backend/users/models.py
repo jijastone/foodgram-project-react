@@ -28,7 +28,6 @@ class User(AbstractUser):
 
 
 class Subscription(models.Model):
-    """Модель подписчиков."""
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,

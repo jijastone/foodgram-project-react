@@ -1,3 +1,5 @@
+from api.pagination import CustomPagination
+from api.serializers import SubscriptionSerializer
 from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet
 from rest_framework import status
@@ -5,8 +7,6 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from api.pagination import CustomPagination
-from api.serializers import SubscriptionSerializer
 
 from .models import Subscription, User
 
@@ -27,7 +27,7 @@ class CustomUserViewSet(UserViewSet):
             _, created = Subscription.objects.get_or_create(
                 user=user, author=author)
             if not created:
-                raise ValidationError('SUBSCRIPTION_EXIST_MESSAGE')
+                raise ValidationError('Не создано')
             serializer = SubscriptionSerializer(
                 author, context=self.get_serializer_context())
             return Response(serializer.data, status=status.HTTP_201_CREATED)
