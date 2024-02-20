@@ -1,16 +1,15 @@
 from django.core.validators import MinValueValidator
 from django.shortcuts import get_object_or_404
 from drf_extra_fields.fields import Base64ImageField
-from rest_framework.exceptions import ValidationError
+from rest_framework import exception
 from rest_framework.fields import (IntegerField, ReadOnlyField,
                                    SerializerMethodField)
 from rest_framework.relations import PrimaryKeyRelatedField
 from rest_framework.serializers import ModelSerializer
-from users.models import User
-from users.serializers import CustomUserSerializer
-
 from recipes.models import (Ingredient, Recipe,
                             RecipeIngredient, Tag)
+from users.models import User
+from users.serializers import CustomUserSerializer
 
 
 class IngredientSerializer(ModelSerializer):
@@ -66,7 +65,7 @@ class RecipeWriteSerializer(ModelSerializer):
     def validate(self, attrs):
         ingredients = self.initial_data.get('ingredients')
         if not ingredients:
-            raise ValidationError(
+            raise exception.ValidationError(
                 {'ingredients': 'Для приготовления блюда нужны ингредиенты'}
             )
         ingredient_set = set()
@@ -74,7 +73,7 @@ class RecipeWriteSerializer(ModelSerializer):
             ingredient = get_object_or_404(Ingredient,
                                            id=ingredient_item['id'])
             if ingredient in ingredient_set:
-                raise ValidationError(
+                raise exception.ValidationError(
                     'Ингредиенты не должны повторяться!'
                 )
             ingredient_set.add(ingredient)
