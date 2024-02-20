@@ -1,0 +1,49 @@
+version: '3.3'
+
+
+volumes:
+  pg_data:
+  static:
+  media:
+  data:
+  redoc:
+
+services:
+
+  db:
+    image: postgres:13
+    env_file: .env
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  backend:
+    restart: always
+    build: ./backend/
+    env_file: .env
+    depends_on:
+      - db
+    volumes:
+      - static:/app/static/
+      - media:/app/media
+
+  frontend:
+    env_file: .env
+    build: ./frontend/
+    command: cp -r /app/build/. /frontend_static/
+    volumes:
+      - static:/app/result_build/build/
+
+  nginx:
+    build: ./infra/
+    env_file: .env
+    ports:
+      - "8000:80"
+    volumes:
+      - ../frontend/build:/usr/share/nginx/html/
+      - ../docs/:/usr/share/nginx/html/api/docs/
+      - static:/var/html/static/
+      - media:/var/html/media/
+      - ./nginx.conf:/etc/nginx/conf_d/default.conf
+    depends_on:
+      - frontend
+      - backend
