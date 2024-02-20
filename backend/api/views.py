@@ -37,7 +37,6 @@ class IngredientViewSet(ReadOnlyModelViewSet):
 
 
 class RecipeViewSet(ModelViewSet):
-    """Viewset for recipes."""
     queryset = Recipe.objects.all()
     filter_backends = (DjangoFilterBackend,)
     permission_classes = (IsAuthenticatedOrReadOnly,)
@@ -53,7 +52,6 @@ class RecipeViewSet(ModelViewSet):
         return RecipeWriteSerializer
 
     def to_add_or_delete(self, model, pk):
-        """Метод создания или удаления связи."""
         recipe = get_object_or_404(Recipe, pk=pk)
         user = self.request.user
 
