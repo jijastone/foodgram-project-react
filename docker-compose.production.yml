@@ -11,6 +11,7 @@ volumes:
 services:
 
   db:
+    restart: always
     image: postgres:13
     env_file: .env
     volumes:
@@ -27,6 +28,7 @@ services:
       - media:/app/media
 
   frontend:
+    restart: always
     env_file: .env
     image: tikzed/foodgram_frontend
     command: cp -r /app/build/. /frontend_static/
@@ -34,6 +36,7 @@ services:
       - static:/app/result_build/build/
 
   nginx:
+    restart: always
     image: tikzed/foodgram_gateway
     env_file: .env
     ports:
