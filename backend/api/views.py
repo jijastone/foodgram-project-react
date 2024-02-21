@@ -17,7 +17,7 @@ from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 from .filters import RecipeFilter
 from .pagination import CustomPagination
 from .permissions import IsAdminOrReadOnly
-from .serializers import (IngredientSerializer, RecipeMiniSerializer,
+from .serializers import (IngredientSerializer,
                           RecipeReadSerializer, RecipeWriteSerializer,
                           TagSerializer)
 
