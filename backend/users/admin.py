@@ -20,3 +20,4 @@ class UserAdmin(UserAdmin):
 class SubscribeAdmin(admin.ModelAdmin):
     list_display = ('user', 'author',)
     list_filter = ('author',)
+
