@@ -50,39 +50,6 @@ class RecipeViewSet(ModelViewSet):
             return RecipeReadSerializer
         return RecipeWriteSerializer
 
-    def to_add_or_delete(self, model, pk):
-        recipe = get_object_or_404(Recipe, pk=pk)
-        user = self.request.user
-
-        if self.request.method == 'POST':
-            if model.objects.filter(user=user, recipe__id=pk).exists():
-                return Response(
-                    {'errors': 'Рецепт уже добавлен!'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            recipe = get_object_or_404(Recipe, id=pk)
-            model.objects.create(user=user, recipe=recipe)
-            serializer = RecipeMiniSerializer(recipe)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        if self.request.method == 'DELETE':
-            obj = model.objects.filter(user=user, recipe__id=pk)
-            if obj.exists():
-                obj.delete()
-                return Response(status=status.HTTP_204_NO_CONTENT)
-            return Response(
-                {'errors': 'Рецепт уже удален!'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-    @action(methods=['POST', 'DELETE'], detail=True, pagination_class=None)
-    def favorite(self, pk):
-        return self.to_add_or_delete(Favorite, pk)
-
-    @action(methods=['POST', 'DELETE'], detail=True, pagination_class=None)
-    def shopping_cart(self, pk):
-        return self.to_add_or_delete(ShoppingCart, pk)
-
     @action(
         methods=['POST', 'DELETE'],
         detail=True,
