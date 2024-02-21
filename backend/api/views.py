@@ -76,11 +76,11 @@ class RecipeViewSet(ModelViewSet):
             )
 
     @action(methods=['POST', 'DELETE'], detail=True, pagination_class=None)
-    def favorite(self, request, pk):
+    def favorite(self, pk):
         return self.to_add_or_delete(Favorite, pk)
 
     @action(methods=['POST', 'DELETE'], detail=True, pagination_class=None)
-    def shopping_cart(self, request, pk):
+    def shopping_cart(self, pk):
         return self.to_add_or_delete(ShoppingCart, pk)
 
     @action(
