@@ -1,4 +1,5 @@
 from api.pagination import CustomPagination
+from api.permissions import IsIUserOrReadOnly
 from api.serializers import SubscriptionSerializer
 from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet
@@ -13,6 +14,16 @@ from .models import Subscription, User
 
 class CustomUserViewSet(UserViewSet):
     pagination_class = CustomPagination
+    permission_classes = (IsIUserOrReadOnly,)
+
+    @action(
+        detail=False,
+        methods=['get'],
+        permission_classes=(IsAuthenticated,)
+    )
+    def me(self, request):
+        serializer = self.get_serializer(self.request.user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(methods=('POST', 'DELETE'),
             detail=True,

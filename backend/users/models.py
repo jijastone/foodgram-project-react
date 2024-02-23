@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.contrib.auth.validators import ASCIIUsernameValidator
 
 
 class User(AbstractUser):
@@ -14,7 +15,10 @@ class User(AbstractUser):
         max_length=50)
     username = models.CharField(
         'Никнейм',
-        max_length=50)
+        max_length=50,
+        unique=True,
+        validators=(ASCIIUsernameValidator(),),
+    )
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
 
