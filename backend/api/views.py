@@ -8,18 +8,18 @@ from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                             ShoppingCart, Tag)
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.permissions import (IsAuthenticated,
-                                        IsAuthenticatedOrReadOnly)
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.serializers import ValidationError
 from rest_framework.status import HTTP_400_BAD_REQUEST
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
 from .filters import RecipeFilter, IngredientFilter
 from .pagination import CustomPagination
-from .permissions import IsAdminOrReadOnly
+from .permissions import IsAdminOrReadOnly, IsAuthorOrReadOnly
 from .serializers import (IngredientSerializer,
                           RecipeReadSerializer, RecipeWriteSerializer,
-                          TagSerializer)
+                          TagSerializer, RecipeMiniSerializer)
 
 
 class TagViewSet(ReadOnlyModelViewSet):
@@ -31,7 +31,7 @@ class TagViewSet(ReadOnlyModelViewSet):
 class IngredientViewSet(ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-    permission_classes = [IsAdminOrReadOnly, ]
+    permission_classes = (IsAdminOrReadOnly, )
     filter_backends = (DjangoFilterBackend,)
     filterset_class = IngredientFilter
 
@@ -39,7 +39,7 @@ class IngredientViewSet(ReadOnlyModelViewSet):
 class RecipeViewSet(ModelViewSet):
     queryset = Recipe.objects.all()
     filter_backends = (DjangoFilterBackend,)
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    permission_classes = (IsAuthorOrReadOnly,)
     pagination_class = CustomPagination
     filterset_class = RecipeFilter
 
@@ -62,6 +62,7 @@ class RecipeViewSet(ModelViewSet):
         methods=['post', 'delete'],
         permission_classes=[IsAuthenticated]
     )
+
     def favorite(self, request, pk):
         if request.method == 'POST':
             return self.add_to(Favorite, request.user, pk)
@@ -80,16 +81,19 @@ class RecipeViewSet(ModelViewSet):
             return self.delete_from(ShoppingCart, request.user, pk)
 
     def add_to(self, model, user, pk):
+        if not Recipe.objects.filter(id=pk).exists():
+            raise ValidationError('Не существует')
         if model.objects.filter(user=user, recipe__id=pk).exists():
             return Response(
                 {'errors': 'Рецепт уже добавлен!'},
                 status=status.HTTP_400_BAD_REQUEST)
         recipe = get_object_or_404(Recipe, id=pk)
         model.objects.create(user=user, recipe=recipe)
-
-        return None
+        serializer = RecipeMiniSerializer(recipe)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def delete_from(self, model, user, pk):
+        get_object_or_404(Recipe, id=pk)
         obj = model.objects.filter(user=user, recipe__id=pk)
         if obj.exists():
             obj.delete()
@@ -114,11 +118,11 @@ class RecipeViewSet(ModelViewSet):
             return Response(status=HTTP_400_BAD_REQUEST)
 
         ingredients = RecipeIngredient.objects.filter(
-            recipe__shopping_cart__user=request.user
+            recipe__in_shopping_cart__user=request.user
         ).values(
             'ingredient__name',
-            'ingredient__unit_measurement'
-        ).annotate(amount=Sum('count'))
+            'ingredient__measurement_unit'
+        ).annotate(amount=Sum('amount'))
 
         today = datetime.today()
         shopping_list = (
@@ -127,8 +131,8 @@ class RecipeViewSet(ModelViewSet):
         )
         shopping_list += '\n'.join([
             f'- {ingredient["ingredient__name"]} '
-            f'({ingredient["ingredient__unit_measurement"]})'
-            f' - {ingredient["count"]}'
+            f'({ingredient["ingredient__measurement_unit"]})'
+            f' - {ingredient["amount"]}'
             for ingredient in ingredients
         ])
         shopping_list += f'\n\nFoodgram ({today:%Y})'

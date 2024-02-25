@@ -50,6 +50,35 @@ class RecipeWriteSerializer(ModelSerializer):
         )
         read_only_fields = ('author',)
 
+    def not_unique_items_validation(self, items):
+        for item in items:
+            if items.count(item) > 1:
+                raise ValidationError('Нельзя добавить одни и те же ингридиенты')
+        return items
+
+    def validate_ingredient(self, items):
+        for item in items:
+            if not Ingredient.objects.filter(id=item['id']).exists():
+                raise ValidationError('Не существует')
+            if int(item['amount']) <= 0:
+                raise ValidationError('мин кол-во ингридентов 1')
+
+    def validate(self, data):
+
+        tags = data.get('tags')
+        if not tags:
+            raise ValidationError('нет тэгов')
+        self.not_unique_items_validation(tags)
+        ingredients = data.get('ingredients')
+        if not ingredients:
+            raise ValidationError('нет ингредиентов')
+        self.validate_ingredient(ingredients)
+        image = data.get('image')
+        if not image:
+            raise ValidationError('нет фотографии')
+        self.not_unique_items_validation(ingredients)
+        return data
+
     def create_ingredients(self, ingredients, recipe):
         RecipeIngredient.objects.bulk_create(
             [RecipeIngredient(
@@ -150,8 +179,7 @@ class RecipeMiniSerializer(RecipeReadSerializer):
 
 class SubscriptionSerializer(CustomUserSerializer):
     recipes = SerializerMethodField()
-    recipes_count = ReadOnlyField(
-        source='recipes.count')
+    recipes_count = SerializerMethodField()
 
     class Meta:
         model = User
@@ -159,8 +187,14 @@ class SubscriptionSerializer(CustomUserSerializer):
                   'recipes', 'recipes_count')
         read_only_fields = ("email", "username", "first_name", "last_name")
 
+    def get_recipes_count(self, obj):
+        return Recipe.objects.filter(
+                author=obj).count()
+
     def get_recipes(self, obj):
+        limit = int(self.context.get(
+            "request").GET.get('recipes_limit', 10 ** 10))
         return RecipeMiniSerializer(
             Recipe.objects.filter(
-                author=obj).all(), many=True, read_only=True
+                author=obj).all()[: limit], many=True, read_only=True
         ).data

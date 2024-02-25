@@ -1,5 +1,5 @@
 from api.pagination import CustomPagination
-from api.permissions import IsIUserOrReadOnly
+from api.permissions import IsAuthorOrReadOnly
 from api.serializers import SubscriptionSerializer
 from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet
@@ -14,7 +14,7 @@ from .models import Subscription, User
 
 class CustomUserViewSet(UserViewSet):
     pagination_class = CustomPagination
-    permission_classes = (IsIUserOrReadOnly,)
+    permission_classes = (IsAuthorOrReadOnly,)
 
     @action(
         detail=False,
@@ -33,7 +33,7 @@ class CustomUserViewSet(UserViewSet):
         user = request.user
         author = get_object_or_404(User, id=id)
         if user == author:
-            raise ValidationError('a')
+            raise ValidationError('не самого себя нельзя')
         if request.method == 'POST':
             _, created = Subscription.objects.get_or_create(
                 user=user, author=author)
@@ -42,8 +42,9 @@ class CustomUserViewSet(UserViewSet):
             serializer = SubscriptionSerializer(
                 author, context=self.get_serializer_context())
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        subscribtion = get_object_or_404(
-            Subscription, user=user, author=author)
+        if not Subscription.objects.filter(user=user, author=author).exists():
+            raise ValidationError('Не существует')
+        subscribtion = Subscription.objects.filter(user=user, author=author)
         subscribtion.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
