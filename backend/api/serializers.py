@@ -24,6 +24,7 @@ class TagSerializer(ModelSerializer):
 class CreateIngredientSerializer(ModelSerializer):
     id = IntegerField(write_only=True)
     amount = IntegerField()
+
     class Meta:
         model = RecipeIngredient
         fields = ('id', 'amount')
@@ -53,7 +54,8 @@ class RecipeWriteSerializer(ModelSerializer):
     def not_unique_items_validation(self, items):
         for item in items:
             if items.count(item) > 1:
-                raise ValidationError('Нельзя добавить одни и те же ингридиенты')
+                raise ValidationError(
+                    'Нельзя добавить одни и те же ингридиенты')
         return items
 
     def validate_ingredient(self, items):

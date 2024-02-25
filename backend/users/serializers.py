@@ -1,7 +1,6 @@
 from django.contrib.auth import get_user_model
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework.fields import SerializerMethodField
-from rest_framework.permissions import IsAuthenticated
 from .models import Subscription
 
 User = get_user_model()
