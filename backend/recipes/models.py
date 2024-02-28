@@ -1,6 +1,10 @@
 from django.contrib.auth import get_user_model
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
+from colorfield.fields import ColorField
+from foodgram.constants import (MAX_LENGTH, MIN_COOKING_TIME_AMOUNT,
+                                MASSAGE_E_COOK, MAX_COOKING_TIME_AMOUNT,
+                                MASSAGE_E_AMOUNT)
 
 User = get_user_model()
 
@@ -8,15 +12,19 @@ User = get_user_model()
 class Ingredient(models.Model):
     name = models.CharField(
         'Название ингредиента',
-        max_length=50)
+        max_length=MAX_LENGTH)
     measurement_unit = models.CharField(
         'Единица измерения ингредиента',
-        max_length=50)
+        max_length=MAX_LENGTH)
 
     class Meta:
         ordering = ['name']
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
+        constraints = [models.UniqueConstraint(
+            fields=['name', 'measurement_unit'],
+            name='unique_name_measurement_unit'
+        )]
 
     def __str__(self):
         return f'{self.name}, {self.measurement_unit}.'
@@ -25,22 +33,21 @@ class Ingredient(models.Model):
 class Tag(models.Model):
     name = models.CharField(
         'Имя',
-        max_length=60,
+        max_length=MAX_LENGTH,
         unique=True)
-    color = models.CharField(
+    color = ColorField(
         'HEX код',
-        max_length=7,
         default="#ffffff",
         unique=True)
     slug = models.SlugField(
         'Ссылка',
-        max_length=100,
+        max_length=MAX_LENGTH,
         unique=True)
 
     class Meta:
         verbose_name = 'Тэг'
         verbose_name_plural = 'Тэги'
-        ordering = ['-id']
+        ordering = ['-name']
 
     def __str__(self):
         return self.name
@@ -54,7 +61,7 @@ class Recipe(models.Model):
         verbose_name='Автор')
     name = models.CharField(
         'Название рецепта',
-        max_length=200)
+        max_length=MAX_LENGTH)
     image = models.ImageField(
         'Изображение рецепта',
         upload_to='static/recipe/',
@@ -69,9 +76,12 @@ class Recipe(models.Model):
         Tag,
         verbose_name='Тэги',
         related_name='recipes')
-    cooking_time = models.IntegerField(
+    cooking_time = models.PositiveSmallIntegerField(
         verbose_name='Время приготовления в минутах',
-        validators=[MinValueValidator(1)]
+        validators=[MinValueValidator(MIN_COOKING_TIME_AMOUNT,
+                                      message=MASSAGE_E_AMOUNT),
+                    MaxValueValidator(MAX_COOKING_TIME_AMOUNT,
+                                      message=MASSAGE_E_AMOUNT)]
     )
     pub_date = models.DateTimeField(
         'Дата публикации',
@@ -100,9 +110,12 @@ class RecipeIngredient(models.Model):
         verbose_name='Продукт'
 
     )
-    amount = models.IntegerField(
-        'Мера',
-        validators=(MinValueValidator(1),)
+    amount = models.PositiveSmallIntegerField(
+        verbose_name='',
+        validators=[MinValueValidator(MIN_COOKING_TIME_AMOUNT,
+                                      message=MASSAGE_E_COOK),
+                    MaxValueValidator(MAX_COOKING_TIME_AMOUNT,
+                                      message=MASSAGE_E_COOK)]
     )
 
     class Meta:

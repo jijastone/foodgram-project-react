@@ -10,16 +10,16 @@ from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.serializers import ValidationError
 from rest_framework.status import HTTP_400_BAD_REQUEST
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
 from .filters import RecipeFilter, IngredientFilter
 from .pagination import CustomPagination
 from .permissions import IsAdminOrReadOnly, IsAuthorOrReadOnly
-from .serializers import (IngredientSerializer,
-                          RecipeReadSerializer, RecipeWriteSerializer,
-                          TagSerializer, RecipeMiniSerializer)
+from .serializers import (IngredientSerializer, RecipeReadSerializer,
+                          RecipeWriteSerializer, TagSerializer,
+                          CreateFavoriteSerializer,
+                          CreateShoppingCartSerializer)
 
 
 class TagViewSet(ReadOnlyModelViewSet):
@@ -52,54 +52,52 @@ class RecipeViewSet(ModelViewSet):
         return RecipeWriteSerializer
 
     @action(
-        methods=['POST', 'DELETE'],
+        methods=['POST'],
         detail=True,
         url_path='favorite',
         permission_classes=(IsAuthenticated,)
     )
-    @action(
-        detail=True,
-        methods=['post', 'delete'],
-        permission_classes=[IsAuthenticated]
-    )
     def favorite(self, request, pk):
-        if request.method == 'POST':
-            return self.add_to(Favorite, request.user, pk)
-        else:
-            return self.delete_from(Favorite, request.user, pk)
+        user = request.user
+        data = {'user': user.id, 'recipe': pk}
+        return self.add_to(CreateFavoriteSerializer(
+            data=data, context={'request': request}))
+
+    @favorite.mapping.delete
+    def delete_favorite(self, request, pk):
+        return self.delete_from(Favorite, request.user, pk)
 
     @action(
         detail=True,
-        methods=['post', 'delete'],
+        methods=['post'],
         permission_classes=[IsAuthenticated]
     )
     def shopping_cart(self, request, pk):
-        if request.method == 'POST':
-            return self.add_to(ShoppingCart, request.user, pk)
-        else:
-            return self.delete_from(ShoppingCart, request.user, pk)
+        user = request.user
+        data = {'user': user.id, 'recipe': pk}
+        return self.add_to(
+            CreateShoppingCartSerializer(
+                data=data, context={"request": request}))
 
-    def add_to(self, model, user, pk):
-        if not Recipe.objects.filter(id=pk).exists():
-            raise ValidationError('Не существует')
-        if model.objects.filter(user=user, recipe__id=pk).exists():
-            return Response(
-                {'errors': 'Рецепт уже добавлен!'},
-                status=status.HTTP_400_BAD_REQUEST)
-        recipe = get_object_or_404(Recipe, id=pk)
-        model.objects.create(user=user, recipe=recipe)
-        serializer = RecipeMiniSerializer(recipe)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    @shopping_cart.mapping.delete
+    def delete_shopping_cart(self, request, pk):
+        return self.delete_from(ShoppingCart, request.user, pk)
+
+    def add_to(self, serializer):
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(
+            serializer.data, status=status.HTTP_201_CREATED
+        )
 
     def delete_from(self, model, user, pk):
         get_object_or_404(Recipe, id=pk)
-        obj = model.objects.filter(user=user, recipe__id=pk)
-        if obj.exists():
-            obj.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response(
-            {'errors': 'Рецепт уже удален!'},
-            status=status.HTTP_400_BAD_REQUEST)
+        obj = model.objects.filter(user=user, recipe__id=pk).delete()
+        if obj[0] == 0:
+            return Response(
+                {'errors': 'Рецепт уже удален!'},
+                status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
         methods=['GET'],

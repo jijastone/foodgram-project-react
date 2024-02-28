@@ -1,29 +1,31 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.contrib.auth.validators import ASCIIUsernameValidator
+from django.contrib.auth.validators import UnicodeUsernameValidator
+from foodgram.constants import MAX_LENGTH_USER, MAX_LENGTH_EMAIL
 
 
 class User(AbstractUser):
-    email = models.EmailField(
-        'Email',
-        max_length=50, unique=True)
-    first_name = models.CharField(
-        'Имя',
-        max_length=50)
-    last_name = models.CharField(
-        'Фамилия',
-        max_length=50)
-    username = models.CharField(
-        'Никнейм',
-        max_length=50,
-        unique=True,
-        validators=(ASCIIUsernameValidator(),),
-    )
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
 
+    email = models.EmailField(
+        'Email',
+        max_length=MAX_LENGTH_EMAIL, unique=True)
+    first_name = models.CharField(
+        'Имя',
+        max_length=MAX_LENGTH_USER)
+    last_name = models.CharField(
+        'Фамилия',
+        max_length=MAX_LENGTH_USER)
+    username = models.CharField(
+        'Никнейм',
+        max_length=MAX_LENGTH_USER,
+        unique=True,
+        validators=(UnicodeUsernameValidator(),),
+    )
+
     class Meta:
-        ordering = ('id',)
+        ordering = ('email',)
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
 
