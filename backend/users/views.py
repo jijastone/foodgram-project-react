@@ -1,7 +1,8 @@
 from api.pagination import CustomPagination
 from api.permissions import IsAuthorOrReadOnly
 from api.serializers import (SubscriptionSerializer,
-                             SubscriptionCreateSerializer)
+                             SubscriptionCreateSerializer
+                             )
 from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet
 from rest_framework import status
@@ -17,7 +18,7 @@ class CustomUserViewSet(UserViewSet):
     permission_classes = (IsAuthorOrReadOnly,)
 
     def get_permissions(self):
-        if self.request.path == '/api/users/me/':
+        if self.action == 'me':
             return (IsAuthenticated(),)
         return super().get_permissions()
 
@@ -44,8 +45,9 @@ class CustomUserViewSet(UserViewSet):
     def delete_subscribtion(self, request, id):
         user = request.user
         author = get_object_or_404(User, id=id)
-        obj = Subscription.objects.filter(user=user, author=author).delete()
-        if obj[0] == 0:
+        delete_cnt, _ = Subscription.objects.filter(
+            user=user, author=author).delete()
+        if not delete_cnt:
             return Response(
                 {'errors': 'Подписка уже удалена!'},
                 status=status.HTTP_400_BAD_REQUEST)

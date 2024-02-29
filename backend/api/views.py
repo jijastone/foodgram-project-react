@@ -26,6 +26,7 @@ class TagViewSet(ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     permission_classes = (IsAdminOrReadOnly, )
+    pagination_class = None
 
 
 class IngredientViewSet(ReadOnlyModelViewSet):
@@ -34,6 +35,7 @@ class IngredientViewSet(ReadOnlyModelViewSet):
     permission_classes = (IsAdminOrReadOnly, )
     filter_backends = (DjangoFilterBackend,)
     filterset_class = IngredientFilter
+    pagination_class = None
 
 
 class RecipeViewSet(ModelViewSet):
@@ -92,8 +94,8 @@ class RecipeViewSet(ModelViewSet):
 
     def delete_from(self, model, user, pk):
         get_object_or_404(Recipe, id=pk)
-        obj = model.objects.filter(user=user, recipe__id=pk).delete()
-        if obj[0] == 0:
+        delete_cnt, _ = model.objects.filter(user=user, recipe__id=pk).delete()
+        if not delete_cnt:
             return Response(
                 {'errors': 'Рецепт уже удален!'},
                 status=status.HTTP_400_BAD_REQUEST)

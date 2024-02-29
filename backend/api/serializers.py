@@ -7,7 +7,6 @@ from rest_framework.relations import PrimaryKeyRelatedField
 from rest_framework.serializers import ModelSerializer, ValidationError
 
 from users.models import User, Subscription
-from foodgram.constants import PAG_LIMIT
 
 
 class CustomUserSerializer(ModelSerializer):
@@ -66,18 +65,18 @@ class RecipeWriteSerializer(ModelSerializer):
         )
         read_only_fields = ('author',)
 
-    def not_unique_items_validation(self, items):
-        for item in items:
-            if items.count(item) > 1:
-                raise ValidationError(
-                    'Нельзя добавить одни и те же ингридиенты')
+    def not_unique_items_validation(self, items, message):
+        s_items = set(items)
+        if len(s_items) != len(items):
+            raise ValidationError(
+                f'Нельзя добавить одни и те же {message}')
         return items
 
     def validate(self, data):
         tags = data.get('tags')
         if not tags:
             raise ValidationError('нет тэгов')
-        self.not_unique_items_validation(tags)
+        self.not_unique_items_validation(tags, 'теги')
         ingredients = data.get('ingredients')
         if not ingredients:
             raise ValidationError('нет ингредиентов')
@@ -85,7 +84,8 @@ class RecipeWriteSerializer(ModelSerializer):
         if not image:
             raise ValidationError('нет фотографии')
         self.not_unique_items_validation(
-            [ingredient['ingredient']['id'] for ingredient in ingredients])
+            [ingredient['ingredient']['id'] for ingredient in ingredients],
+            'ингридиенты')
         return data
 
     def create_ingredients(self, ingredients, recipe):
@@ -193,11 +193,11 @@ class SubscriptionSerializer(CustomUserSerializer):
             'request').GET.get('recipes_limit')
         try:
             limit = int(limit)
-        except TypeError:
-            limit = PAG_LIMIT
+        except TypeError or ValueError:
+            pass
         return RecipeMiniSerializer(
             Recipe.objects.filter(
-                author=obj).all()[: limit], many=True, read_only=True
+                author=obj).all()[:limit], many=True, read_only=True
         ).data
 
 

@@ -2,8 +2,8 @@ from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from colorfield.fields import ColorField
-from foodgram.constants import (MAX_LENGTH, MIN_COOKING_TIME_AMOUNT,
-                                MASSAGE_E_COOK, MAX_COOKING_TIME_AMOUNT,
+from foodgram.constants import (MAX_LENGTH, MIN_COOKING_TIME, MIN_AMOUNT,
+                                MASSAGE_E_COOK, MAX_COOKING_TIME, MAX_AMOUNT,
                                 MASSAGE_E_AMOUNT)
 
 User = get_user_model()
@@ -78,9 +78,9 @@ class Recipe(models.Model):
         related_name='recipes')
     cooking_time = models.PositiveSmallIntegerField(
         verbose_name='Время приготовления в минутах',
-        validators=[MinValueValidator(MIN_COOKING_TIME_AMOUNT,
+        validators=[MinValueValidator(MIN_COOKING_TIME,
                                       message=MASSAGE_E_AMOUNT),
-                    MaxValueValidator(MAX_COOKING_TIME_AMOUNT,
+                    MaxValueValidator(MAX_COOKING_TIME,
                                       message=MASSAGE_E_AMOUNT)]
     )
     pub_date = models.DateTimeField(
@@ -112,9 +112,9 @@ class RecipeIngredient(models.Model):
     )
     amount = models.PositiveSmallIntegerField(
         verbose_name='',
-        validators=[MinValueValidator(MIN_COOKING_TIME_AMOUNT,
+        validators=[MinValueValidator(MIN_AMOUNT,
                                       message=MASSAGE_E_COOK),
-                    MaxValueValidator(MAX_COOKING_TIME_AMOUNT,
+                    MaxValueValidator(MAX_AMOUNT,
                                       message=MASSAGE_E_COOK)]
     )
 
