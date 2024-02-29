@@ -4,8 +4,10 @@ from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
+from djoser.views import UserViewSet
 from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                             ShoppingCart, Tag)
+from user.models import Subscription, User
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -18,8 +20,9 @@ from .pagination import CustomPagination
 from .permissions import IsAdminOrReadOnly, IsAuthorOrReadOnly
 from .serializers import (IngredientSerializer, RecipeReadSerializer,
                           RecipeWriteSerializer, TagSerializer,
-                          CreateFavoriteSerializer,
-                          CreateShoppingCartSerializer)
+                          CreateFavoriteSerializer,SubscriptionSerializer,
+                          SubscriptionCreateSerializer, CreateShoppingCartSerializer)
+
 
 
 class TagViewSet(ReadOnlyModelViewSet):
@@ -141,3 +144,54 @@ class RecipeViewSet(ModelViewSet):
         response['Content-Disposition'] = f'attachment; filename={filename}'
 
         return response
+
+class CustomUserViewSet(UserViewSet):
+    pagination_class = CustomPagination
+    permission_classes = (IsAuthorOrReadOnly,)
+
+    def get_permissions(self):
+        if self.action == 'me':
+            return (IsAuthenticated(),)
+        return super().get_permissions()
+
+    @action(methods=('POST',),
+            detail=True,
+            url_path='subscribe',
+            permission_classes=(IsAuthenticated,))
+    def subscribtion(self, request, id):
+        author = get_object_or_404(User, id=id)
+        user = request.user
+        data = {'author': author.id, 'user': user.id}
+        serializer = SubscriptionCreateSerializer(
+            data=data,
+            context={'request': request}
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(
+            serializer.data,
+            status=status.HTTP_201_CREATED
+        )
+
+    @subscribtion.mapping.delete
+    def delete_subscribtion(self, request, id):
+        user = request.user
+        author = get_object_or_404(User, id=id)
+        delete_cnt, _ = Subscription.objects.filter(
+            user=user, author=author).delete()
+        if not delete_cnt:
+            return Response(
+                {'errors': 'Подписка уже удалена!'},
+                status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(methods=('GET',),
+            detail=False,
+            url_path='subscriptions',
+            permission_classes=(IsAuthenticated,))
+    def get_subscribtions(self, request):
+        pages = self.paginate_queryset(
+            User.objects.filter(subscriptions__user=request.user))
+        serializer = SubscriptionSerializer(
+            pages, many=True, context=self.get_serializer_context())
+        return self.get_paginated_response(serializer.data)

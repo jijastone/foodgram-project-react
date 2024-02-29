@@ -79,9 +79,9 @@ class Recipe(models.Model):
     cooking_time = models.PositiveSmallIntegerField(
         verbose_name='Время приготовления в минутах',
         validators=[MinValueValidator(MIN_COOKING_TIME,
-                                      message=MASSAGE_E_AMOUNT),
+                                      message=MASSAGE_E_COOK),
                     MaxValueValidator(MAX_COOKING_TIME,
-                                      message=MASSAGE_E_AMOUNT)]
+                                      message=MASSAGE_E_COOK)]
     )
     pub_date = models.DateTimeField(
         'Дата публикации',
@@ -113,9 +113,9 @@ class RecipeIngredient(models.Model):
     amount = models.PositiveSmallIntegerField(
         verbose_name='',
         validators=[MinValueValidator(MIN_AMOUNT,
-                                      message=MASSAGE_E_COOK),
+                                      message=MASSAGE_E_AMOUNT),
                     MaxValueValidator(MAX_AMOUNT,
-                                      message=MASSAGE_E_COOK)]
+                                      message=MASSAGE_E_AMOUNT)]
     )
 
     class Meta:

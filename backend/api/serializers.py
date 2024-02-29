@@ -193,7 +193,9 @@ class SubscriptionSerializer(CustomUserSerializer):
             'request').GET.get('recipes_limit')
         try:
             limit = int(limit)
-        except TypeError or ValueError:
+        except ValueError:
+            pass
+        except TypeError:
             pass
         return RecipeMiniSerializer(
             Recipe.objects.filter(
